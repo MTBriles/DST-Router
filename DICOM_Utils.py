@@ -1,0 +1,71 @@
+from pynetdicom3 import AE
+from pynetdicom3.sop_class import VerificationSOPClass
+import tkinter as tk
+import os
+import socket
+
+ip1 = "10.232.1.103"
+port = 11112
+retry = 5
+delay = 10
+timeout = 3
+
+
+class DICOMEcho(tk.Toplevel):
+
+    def __init__(self, *args, **kwargs):
+        tk.Toplevel.__init__(self, *args, **kwargs)
+
+        ae = AE()
+        ae.add_requested_context(VerificationSOPClass)
+        # Associate with the peer at IP address and Port
+        assoc = ae.associate(ip1, port)
+        if assoc.is_established:
+            self.title('Connection SUCCESS')
+            self.geometry('200x200')
+            self.configure(bg='gray16')
+            self.resizable(False, False)
+            self.label_status = tk.Label(self, text='SUCCESS', bg='gray16', fg='GREEN', font=('', 12))
+            self.label_status.pack(pady=15)
+            # Do something with the association
+            pass
+            # Once we are finished, release the association
+            assoc.release()
+        else:
+            var = 'ping ' + ip1
+            if os.system(var) == 0:
+
+                def isOpen(ip1, port):
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(timeout)
+                    try:
+                        s.connect((ip1, int(port)))
+                        s.shutdown(socket.SHUT_RDWR)
+                        return True
+                    except:
+                        return False
+                    finally:
+                        s.close()
+
+                if isOpen(ip1, port):
+                    self.title('Connection FAILED')
+                    self.geometry('400x100')
+                    self.configure(bg='gray16')
+                    self.resizable(False, False)
+                    self.label_status = tk.Label(self, text='PORT IS OPEN BUT DICOM ASSOCIATION FAILED', bg='gray16', fg='RED', font=('', 12))
+                    self.label_status.pack(pady=15)
+                else:
+                    self.title('Connection FAILED')
+                    self.geometry('400x100')
+                    self.configure(bg='gray16')
+                    self.resizable(False, False)
+                    self.label_status = tk.Label(self, text='PORT IS BLOCKED BUT YOU CAN PING THE IP', bg='gray16', fg='RED', font=('', 12))
+                    self.label_status.pack(pady=15)
+            else:
+                self.title('Connection FAILED')
+                self.geometry('200x100')
+                self.configure(bg='gray16')
+                self.resizable(False, False)
+                self.label_status = tk.Label(self, text='COULD NOT PING IP', bg='gray16', fg='RED', font=('', 12))
+                self.label_status.pack(pady=15)
+
