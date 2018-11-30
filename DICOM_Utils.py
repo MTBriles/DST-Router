@@ -4,7 +4,7 @@ import tkinter as tk
 import os
 import socket
 
-ip1 = "10.232.1.103"
+ip1 = "10.232.200.22"
 port = 11112
 retry = 5
 delay = 10
@@ -21,18 +21,23 @@ class DICOMEcho(tk.Toplevel):
         # Associate with the peer at IP address and Port
         assoc = ae.associate(ip1, port)
         if assoc.is_established:
-            self.title('Connection SUCCESS')
-            self.geometry('200x200')
-            self.configure(bg='gray16')
-            self.resizable(False, False)
-            self.label_status = tk.Label(self, text='SUCCESS', bg='gray16', fg='GREEN', font=('', 12))
-            self.label_status.pack(pady=15)
-            # Do something with the association
-            pass
-            # Once we are finished, release the association
-            assoc.release()
-        else:
+            status = assoc.send_c_echo()
+
+            # Output the response from the peer
+            if status:
+                self.title('Connection SUCCESS')
+                self.geometry('400x200')
+                self.configure(bg='gray16')
+                self.resizable(False, False)
+                self.label_status = tk.Label(self, text='C-ECHO Response: 0x{0:04x}'.format(status.Status), bg='gray16', fg='GREEN', font=('', 12))
+                self.label_status.pack(pady=15)
+                # Do something with the association
+                pass
+                # Once we are finished, release the association
+                assoc.release()
+        elif assoc.is_rejected or assoc.is_aborted:
             var = 'ping ' + ip1
+
             if os.system(var) == 0:
 
                 def isOpen(ip1, port):
