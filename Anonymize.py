@@ -14,23 +14,26 @@ import time
 import multiprocessing
 
 # Initialise the Application Entity and specify the listen port
-ae = AE(ae_title=b'ANONYMIZE', port=11113)
-ae.supported_contexts = StoragePresentationContexts
-ae.maximum_associations = 30
-ae.NumberOfActiveAssociations = 30
-config_AE = ('test')
+
 cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
 cursor = cnxn.cursor()
 cursor.execute("SELECT * FROM dbo.DSTools_Anony_Config with(nolock)")
 rows = cursor.fetchall()
 for row in rows:
-    print(str(row).replace(' ',''))
+    print(str(row).replace(' ', ''))
 cnxn.close()
-config_AE = str(row.dest_AE.replace(' ',''))
+config_AE = str(row.dest_AE.replace(' ', ''))
 config_port = row.dest_PORT
-config_ip = str(row.dest_IP.replace(' ',''))
-send_to_dir = str(row.send_to_dir.replace(' ',''))
-config_path = str(row.send_to_dir_path.replace(' ',''))
+config_ip = str(row.dest_IP.replace(' ', ''))
+send_to_dir = str(row.send_to_dir.replace(' ', ''))
+config_path = str(row.send_to_dir_path.replace(' ', ''))
+config_local_AE = str(row.local_AE.replace(' ', ''))
+config_local_PORT = row.local_PORT
+config_MAX_threads = row.local_MAX_threads
+ae = AE(ae_title=config_local_AE, port=config_local_PORT)
+ae.supported_contexts = StoragePresentationContexts
+ae.maximum_associations = config_MAX_threads
+ae.NumberOfActiveAssociations = config_MAX_threads
 
 
 def on_c_store(ds, context, info):
