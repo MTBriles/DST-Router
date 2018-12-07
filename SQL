@@ -1,0 +1,25 @@
+import pyodbc
+import Views
+
+#info = Views.Devices
+
+#p = info.device_added
+
+def add_device():
+    print('test')
+    #print(p)
+    return True
+
+
+""""
+        cnxn = pyodbc.connect("Driver={SQL Server};"
+                              "ommited"
+                              "ommited"
+                              "ommited")
+
+        cursor = cnxn.cursor()
+        cursor.execute('ommited (Device_Name, IP, Port, AE, Max_Threads) '
+                       'VALUES (TestD, IPtest, 104, AEtest, 3)')
+        cnxn.commit()
+        cnxn.close()
+        """
