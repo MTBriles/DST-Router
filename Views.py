@@ -36,12 +36,14 @@ class Devices(tk.Toplevel):
             self.label_blank_port.grid(row=7, column=2, sticky=tk.W, columnspan=2)
         else:
             port = self.entry_port.get()
-        self.sql_add = str(ae+','+ip+','+name+','+port)
-        print(sql_add)
-        #SQL.add_device()
+        SQL.add_device(name, ip, port, ae, 4)
         self.label_device_added.grid(row=7, column=2)
-        #print('test3')
-        return self.sql_add
+        self.refresh_w()
+
+    def refresh_w(self):
+        Devices.destroy(self)
+        Devices()
+
 
     def dicom_echo(self):
         print('DICOM Echo')
@@ -115,13 +117,15 @@ class Devices(tk.Toplevel):
                                            fg='red', command=self.device_added)
         self.button_add_source.grid(row=4, column=2, sticky=tk.W)
 
-        self.button_remove_source = tk.Button(self, text='Remove Device', bg='gray14', fg='red')
+        self.button_remove_source = tk.Button(self, text='Remove Device', bg='gray14', fg='red', command=self.get_item)
         self.button_remove_source.grid(row=6, column=2, sticky=tk.W)
 
         self.button_echo = tk.Button(self, text='DICOM ECHO', bg='gray14', fg='red', command=self.dicom_echo)
         self.button_echo.grid(row=5, column=2, sticky=tk.W)
 
         self.label_device_added = tk.Label(self, text='Device Added!', bg='gray16', fg='red')
+
+        self.label_device_removed = tk.Label(self, text='Device Removed!', bg='gray16', fg='red')
 
         self.label_association_fail = tk.Label(self, text='PORT IS OPEN BUT DICOM ASSOCIATION FAILED', bg='gray16',
                                                fg='RED')
@@ -144,7 +148,7 @@ class Devices(tk.Toplevel):
             # adjust the columns width to the header string
             self.tree.column(col, width=tkFont.Font().measure(col.title()))
 
-        for item in c_list:
+        for item in SQL.get_list():
             print(self.tree.insert('', 'end', values=item))
             # adjust columns width if necessary to fit each value
             for ix, val in enumerate(item):
@@ -152,20 +156,20 @@ class Devices(tk.Toplevel):
                 if self.tree.column(c_headers[ix], width=130): # <col_w:
                     self.tree.column(c_headers[ix], width=col_w)
 
-    def selection(self, event):
-        """"
-        gets selected item id and prints them
-        """
-        id = self.tree.identify_row(event.y)
-        print('selection', id)
+    def get_item(self):
+        curItem = self.tree.focus()
+        dict = self.tree.item(curItem)
+        row = ''.join('{}'.format(val) for val in dict.items())
+        row_l = (row.split(', ['))
+        row_ls = row_l[1]
+        new_row_ls = (row_ls.split(','))
+        row_id = new_row_ls[0]
+        SQL.remove_device(row_id)
+        self.label_device_removed.grid(row=7, column=2)
+        self.refresh_w()
 
 
-c_headers = ['ID', 'Name', 'IP', 'AE', 'PORT', 'Threads']
-c_list = [
-    ('1', 'PACS', 'IP1', 'AE1', 'port1', 'thread1'),
-    ('2', 'PACS2', 'IP2', 'AE2', 'port2', 'thread2'),
-    ('3', 'PACS3', 'IP3', 'AE3', 'port3', 'thread3')
-]
+c_headers = ['ID', 'Name', 'IP', 'Port', 'AE', 'Threads']
 
 
 class Rules(tk.Toplevel):
@@ -185,14 +189,3 @@ class ActiveRules(tk.Toplevel):
         self.geometry('330x300')
         self.configure(bg='gray16')
 
-"""
-if __name__ == '__main__':
-    root = tk.Tk()
-    Devices(root).grid()
-    root.mainloop()
-
-root = tk.Tk()
-root.wm_title('Devices')
-listbox = Devices(root)
-root.mainloop()
-"""
