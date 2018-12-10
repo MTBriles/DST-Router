@@ -1,25 +1,45 @@
 import pyodbc
 import Views
 
-#info = Views.Devices
 
-#p = info.device_added
-
-def add_device():
+def add_device(Device_Name, IP, Port, AE, Max_Threads):
     print('test')
-    #print(p)
-    return True
+    cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
 
 
-""""
-        cnxn = pyodbc.connect("Driver={SQL Server};"
-                              "ommited"
-                              "ommited"
-                              "ommited")
 
-        cursor = cnxn.cursor()
-        cursor.execute('ommited (Device_Name, IP, Port, AE, Max_Threads) '
-                       'VALUES (TestD, IPtest, 104, AEtest, 3)')
-        cnxn.commit()
-        cnxn.close()
-        """
+    cursor = cnxn.cursor()
+    cursor.execute('INSERT INTO [VALID8].[dbo].[DSTools_Devices] (Device_Name, IP, Port, AE, Max_Threads) '
+                   'VALUES (?, ?, ?, ?, ?)', Device_Name, IP, Port, AE, Max_Threads)
+    cnxn.commit()
+    cnxn.close()
+
+
+def get_list():
+    _list = ()
+    cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
+    cursor = cnxn.cursor()
+    cursor.execute('SELECT ID, Device_name, IP, PORT, AE, MAX_THREADS '
+                   'FROM [VALID8].[dbo].[DSTools_Devices]with(nolock)')
+    rows = cursor.fetchall()
+    result = []
+    for row in rows:
+        ids = str(row[0])
+        name = row[1]
+        ip = row[2]
+        port = str(row[3])
+        ae = row[4]
+        threads = str(row[5])
+        _list = (ids, name, ip, port, ae, threads)
+        result.append(_list)
+    cnxn.close()
+    return result
+
+
+def remove_device(row_id):
+    cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
+    cursor = cnxn.cursor()
+    cursor.execute('DELETE FROM [VALID8].[dbo].[DSTools_Devices] WHERE ID = ?', row_id)
+    cnxn.commit()
+    cnxn.close()
+
