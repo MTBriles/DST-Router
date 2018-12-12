@@ -3,11 +3,8 @@ import Views
 
 
 def add_device(Device_Name, IP, Port, AE, Max_Threads):
-    print('test')
+    """This adds the device to the DB.  It is called in the Views.py file by Devices.add_device"""
     cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
-
-
-
     cursor = cnxn.cursor()
     cursor.execute('INSERT INTO [VALID8].[dbo].[DSTools_Devices] (Device_Name, IP, Port, AE, Max_Threads) '
                    'VALUES (?, ?, ?, ?, ?)', Device_Name, IP, Port, AE, Max_Threads)
@@ -16,6 +13,7 @@ def add_device(Device_Name, IP, Port, AE, Max_Threads):
 
 
 def get_list():
+    """Grabs the devices from the DB. Uses return to pass the list of strings to _build_Tree in the Views.py file"""
     _list = ()
     cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
     cursor = cnxn.cursor()
@@ -37,9 +35,49 @@ def get_list():
 
 
 def remove_device(row_id):
+    """Passed row_id from Views.py get_item func. It then passes the row_id number to the SQL query to remove the
+        device when that button is clicked."""
     cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
     cursor = cnxn.cursor()
     cursor.execute('DELETE FROM [VALID8].[dbo].[DSTools_Devices] WHERE ID = ?', row_id)
     cnxn.commit()
     cnxn.close()
+
+
+def anony_config():
+    """Gets the config from the  Anony_config table in the DB."""
+    cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
+    cursor = cnxn.cursor()
+    cursor.execute('SELECT dest_PORT, dest_IP, dest_AE, send_to_dir, send_to_dir_path, local_AE, local_PORT, local_MAX_threads '
+                   'FROM [VALID8].[dbo].[DSTools_Anony_Config]')
+    rows = cursor.fetchall()
+    cnxn.close()
+    for row in rows:
+        print(str(row).replace(' ', ''))
+    config_AE = str(row.dest_AE.replace(' ', ''))
+    config_port = row.dest_PORT
+    config_ip = str(row.dest_IP.replace(' ', ''))
+    send_to_dir = str(row.send_to_dir.replace(' ', ''))
+    config_path = str(row.send_to_dir_path.replace(' ', ''))
+    config_local_AE = str(row.local_AE.replace(' ', ''))
+    config_threads = row.local_MAX_threads
+    anon_list = [config_AE, config_port, config_ip, send_to_dir, config_path, config_local_AE, config_threads]
+    return anon_list
+
+
+def update_anony_config(dest_PORT, dest_IP, dest_AE, send_to_dir, send_to_dir_path, local_AE, local_PORT,
+                        local_MAX_threads):
+    """ Updates the anony config DB. Called in the Views.py Class Anonymize."""
+    cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
+    cursor = cnxn.cursor()
+    cursor.execute('UPDATE [VALID8].[dbo].[DSTools_Anony_Config] '
+                   'SET dest_PORT=?, dest_IP=?, dest_AE=?, send_to_dir=?, send_to_dir_path=?, local_AE=?, '
+                   'local_PORT=?, local_MAX_threads=? WHERE local_AE = ?', dest_PORT, dest_IP, dest_AE,
+                   send_to_dir, send_to_dir_path, local_AE, local_PORT, local_MAX_threads, 'ANONYMIZE')
+    cnxn.commit()
+    cnxn.close()
+
+
+
+
 
