@@ -6,28 +6,19 @@ from pynetdicom3 import (
     PYNETDICOM_IMPLEMENTATION_VERSION
 )
 
-import pyodbc
-import time
 import multiprocessing
+from SQL import anony_config, get_list
 
 # Initialise the Application Entity and specify the listen port
+anon_list = anony_config()
+print('LocaL AE: ', anon_list[5])
+print('MAX_threads : ', anon_list[6])
+print('local_PORT: ', anon_list[7])
+config_local_AE = anon_list[5]
+config_MAX_threads = anon_list[6]
+config_local_PORT = int(anon_list[7])
 
-cnxn = pyodbc.connect(r'Driver={SQL Server};Server=CPSQL1;Database=Valid8;Trusted_Connection=yes;')
-cursor = cnxn.cursor()
-cursor.execute("SELECT * FROM dbo.DSTools_Router_Config with(nolock)")
-rows = cursor.fetchall()
-for row in rows:
-    print(str(row).replace(' ', ''))
-cnxn.close()
-config_local_AE = str(row.local_AE.replace(' ', ''))
-config_local_PORT = row.local_PORT
-config_MAX_threads = row.local_MAX_Threads
-config_dest_IP = '10.232.200.22'
-config_dest_PORT = 11112
-config_dest_MAX_Threads = 30
-
-
-ae = AE(ae_title=config_local_AE, port=config_local_PORT)
+ae = AE(ae_title=config_local_AE, port=int(config_local_PORT))
 ae.supported_contexts = StoragePresentationContexts
 ae.maximum_associations = config_MAX_threads
 ae.NumberOfActiveAssociations = config_MAX_threads
@@ -54,24 +45,32 @@ def on_c_store(ds, context, info):
 
     # Save the dataset using the SOP Instance UID as the filename
     # ds.save_as(ds.SOPInstanceUID, write_like_original=False)
+    print('Called AE is: ', AE.ae_title)
+    called_ae = str(AE.ae_title)
+    print(called_ae)
+    dest_dev_list = get_list()
+    print(dest_dev_list[3])
+    print('Slot 0', dest_dev_list[3][0])
+    print('Slot 1', dest_dev_list[3][1])
+    print('Slot 2', dest_dev_list[3][2])
+    print('Slot 3', dest_dev_list[3][3])
+    print('Slot 4', dest_dev_list[3][4])
+    print('Slot 4', dest_dev_list[3][5])
 
-    data_elements = ['PatientID',
-                     'PatientBirthDate'
-                     ]
-    for de in data_elements:
-        print(ds.data_element(de))
+    config_dest_IP = dest_dev_list[3][2]
+    config_dest_PORT = int(dest_dev_list[3][3])
+    config_dest_MAX_Threads = int(dest_dev_list[3][5])
+    print('dest_PORT: ', config_dest_PORT)
+    #print(ds)
 
     assoc = ae.associate(config_dest_IP, config_dest_PORT)
     assoc.maximum_associations = config_dest_MAX_Threads
     assoc.NumberOfActiveAssociations = config_dest_MAX_Threads
     if assoc.is_established:
-        if ds.SOPClassUID != "1.2.840.10008.5.1.4.1.1.7" and ds.SOPClassUID != "1.2.840.10008.5.1.4.1.1.88.67'" and ds.SOPClassUID != "1.2.840.10008.5.1.4.1.1.11.1":
-            status = assoc.send_c_store(ds)
-        else:
-            assoc.release()
+        status = assoc.send_c_store(ds)
+        print(status)
 
     assoc.release()
-    time.sleep(1)
     ae.remove_requested_context(meta.MediaStorageSOPClassUID)
                     # Return a 'Success' status
     return 0x0000
@@ -91,4 +90,3 @@ if __name__ == '__main__':
     worker_1.start()
     worker_2.start()
     service.start()
-    
