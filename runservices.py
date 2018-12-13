@@ -1,33 +1,54 @@
-
 import os
-import sys
+import tkinter as tk
+import win32serviceutil
 import psutil
-import subprocess
 
-import pysc
+currentpath2 = r'%s' % os.getcwd().replace('\\', '/')
+currentpath = (currentpath2 + '/')
+exefile = str(currentpath + 'nssm.exe')
 
 
-class anonyservice:
-
+class service_control(tk.Toplevel):
 
     def createservice():
-        script_fullpath = os.path.realpath('Anonymize.exe')
-        pysc.create(
-        service_name='Anonymize',
-        cmd=[sys.executable, script_fullpath]
-        )
+        installservice = (exefile+' install DSTools_Router '+currentpath+'DSTools_Router.exe')
+        os.system(installservice)
 
     def stopservice():
-        s = psutil.win_service_get('Anonymize')
-        p = str(s.pid())
-        anonykillcmd = 'taskkill /f /pid ' + p
-        subprocess.check_call(anonykillcmd)
+        stopservice = (exefile + ' stop DSTools_Router')
+        os.system(stopservice)
 
     def removeservice():
-        pysc.delete('Anonymize')
+        removeservice = (exefile + ' remove DSTools_Router')
+        os.system(removeservice)
 
     def startservice():
-        pysc.start('Anonymize')
+        startservice = (exefile + ' start DSTools_Router')
+        os.system(startservice)
+
+    def checkservice():
+        try:
+            service = psutil.win_service_get('DSTools_Router')
+            service = service.as_dict()
+        except Exception as ex:
+            print('did not work', str(ex))
+            return 'Not_Installed'
+
+        if service:
+            if service['status'] == 'running':
+                print('service running')
+                return 'Running'
+            else:
+                print('service not started')
+                return 'Stopped'
+        else:
+            print('service not found')
+            return 'Not_Installed'
+
+
+
+
+
 
 
 
