@@ -2,31 +2,34 @@ import os
 import tkinter as tk
 import win32serviceutil
 import psutil
+import time
 
 currentpath2 = r'%s' % os.getcwd().replace('\\', '/')
 currentpath = (currentpath2 + '/')
 exefile = str(currentpath + 'nssm.exe')
 
 
-class service_control(tk.Toplevel):
+def create_service():
+    installservice = (exefile+' install DSTools_Router '+currentpath+'DSTools_Router.exe')
+    os.system(installservice)
 
-    def createservice():
-        installservice = (exefile+' install DSTools_Router '+currentpath+'DSTools_Router.exe')
-        os.system(installservice)
 
-    def stopservice():
-        stopservice = (exefile + ' stop DSTools_Router')
-        os.system(stopservice)
+def stop_service():
+    stopservice = (exefile + ' stop DSTools_Router')
+    os.system(stopservice)
 
-    def removeservice():
-        removeservice = (exefile + ' remove DSTools_Router')
-        os.system(removeservice)
 
-    def startservice():
-        startservice = (exefile + ' start DSTools_Router')
-        os.system(startservice)
+def remove_service():
+    removeservice = (exefile + ' remove DSTools_Router')
+    os.system(removeservice)
 
-    def checkservice():
+
+def start_service():
+    startservice = (exefile + ' start DSTools_Router')
+    os.system(startservice)
+
+
+def check_service():
         try:
             service = psutil.win_service_get('DSTools_Router')
             service = service.as_dict()
@@ -44,11 +47,4 @@ class service_control(tk.Toplevel):
         else:
             print('service not found')
             return 'Not_Installed'
-
-
-
-
-
-
-
 
