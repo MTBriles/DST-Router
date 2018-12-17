@@ -6,16 +6,10 @@ from pynetdicom3 import (
     PYNETDICOM_IMPLEMENTATION_VERSION
 )
 
-from pydicom.uid import (
-    ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian)
-
 from pynetdicom3.sop_class import VerificationSOPClass
+from Anonymize import anony
 import multiprocessing
-from SQL import anony_config, get_list, get_rules, get_dest_ip
-#import logging
-
-#LOGGER = logging.getLogger('pynetdicom3')
-#LOGGER.setLevel(logging.DEBUG)
+from SQL import anony_config, get_list, get_active_rules
 
 # Initialise the Application Entity and specify the listen port
 anon_list = anony_config()
@@ -35,23 +29,6 @@ ae.add_supported_context(VerificationSOPClass)
 
 
 def on_c_echo(context, info):
-    """Respond to a C-ECHO service request.
-
-    Parameters
-    ----------
-    context : namedtuple
-        The presentation context that the verification request was sent under.
-    info : dict
-        Information about the association and verification request.
-
-    Returns
-    -------
-    status : int or pydicom.dataset.Dataset
-        The status returned to the peer AE in the C-ECHO response. Must be
-        a valid C-ECHO status value for the applicable Service Class as
-        either an ``int`` or a ``Dataset`` object containing (at a
-        minimum) a (0000,0900) *Status* element.
-    """
     return 0x0000
 
 
@@ -109,7 +86,7 @@ def on_c_store(ds, context, info):
 
     # Save the dataset using the SOP Instance UID as the filename
     # ds.save_as(ds.SOPInstanceUID, write_like_original=False)
-
+    print('Get Device List from SQL')
     dest_dev_list = get_list()
     print('Slot 0', dest_dev_list[2][0])
     print('Slot 1', dest_dev_list[2][1])
@@ -123,32 +100,55 @@ def on_c_store(ds, context, info):
         rule_ip = rule_ip.strip(" ")
         if receiveip == rule_ip:
             print('matching ip', rule_ip)
-            result = str(get_rules())
+            result = str(get_active_rules(receiveip))
             restr = str(''.join(result))
-            list = restr.split(",")
-            dest_id = list[13]
-            print('Trouble Shooting')
-            _dest_ip_port = str(get_dest_ip(dest_id))
-            _dest_ip_port1 = str(''.join(_dest_ip_port))
-            new_list = _dest_ip_port1.split(",")
-            rule_dest_ip = new_list[0]
-            rule_dest_port = new_list[1]
-            rule_dest_ip = rule_dest_ip.replace(" ", "")
-            rule_dest_ip = rule_dest_ip.replace("'", "")
-            rule_dest_ip = rule_dest_ip.replace("[", "")
-            rule_dest_ip = rule_dest_ip.replace("(", "")
-            rule_dest_port = rule_dest_port.replace(" ", "")
-            rule_dest_port = rule_dest_port.replace(")", "")
-            rule_dest_port = rule_dest_port.replace("]", "")
+            rule_list = restr.split(",")
+            rule_list1 = rule_list[1].replace("'", "").replace(" ", "")
+            print('Rule list 1 :', rule_list1)
+            rule_list2 = rule_list[2].replace("'", "").replace(" ", "")
+            print('Rule list 2 :', rule_list2)
+            rule_list3 = rule_list[3].replace("'", "").replace(" ", "")
+            print('Rule list 3 :', rule_list3)
+            rule_list4 = rule_list[4].replace("'", "").replace(" ", "")
+            print('Rule list 4 :', rule_list4)
+            rule_list5 = rule_list[5].replace("'", "").replace(" ", "")
+            print('Rule list 5 :', rule_list5)
+            rule_list6 = rule_list[6].replace("'", "").replace(" ", "")
+            print('Rule list 6 :', rule_list6)
+            rule_list7 = rule_list[7].replace(")", "").replace(" ", "").replace("]", "").replace("'", "")
+            print('Rule list 7 :', rule_list7)
+            if rule_list7 == 'True':
+                print('Need to run Anonymize')
+                anony(ds)
+            _dest_ip = rule_list5
+            _dest_port = 2222
+            print('Destination IP Final : ', _dest_ip)
+            for list in dest_dev_list:
+                print(list[2].replace("'", "").replace(" ", ""))
+                if rule_list5 == list[2].replace("'", "").replace(" ", ""):
+                    print('Setting destination Port', int(list[3]))
+                    list_dest_port = int(list[3])
+                    _dest_port == int(list_dest_port)
+                else:
+                    print('could not get destination port')
+            _dest_port = list_dest_port
+            print('Destination PORT Final : ', _dest_port)
+            print('Destination PORt Final LIST', list_dest_port)
+            try:
+                _dest_port == int(list_dest_port)
+            except:
+                print('could not set port')
 
-            print(rule_dest_ip)
-            print(rule_dest_port)
-            config_dest_IP = rule_dest_ip
-            config_dest_PORT = int(rule_dest_port)
+            config_dest_IP = _dest_ip
+            config_dest_PORT = _dest_port
             config_dest_MAX_Threads = int(dest_dev_list[2][5])
-            active_rule_var = list[12]
-            active_rule_oper = list[11]
-            active_rule_tag = (list[10])
+            print('Destination Port', config_dest_PORT)
+            print('Destination IP', config_dest_IP)
+            print('Destination Max Threads', config_dest_MAX_Threads)
+
+            active_rule_var = rule_list4
+            active_rule_oper = rule_list3
+            active_rule_tag = rule_list2
             active_rule_tag = active_rule_tag.replace("'", "")
             active_rule_tag = active_rule_tag.replace(" ", "")
             active_rule_var = active_rule_var.replace("'", "")
@@ -156,9 +156,10 @@ def on_c_store(ds, context, info):
             print('Rule Operand', active_rule_oper)
             print('Rule Tag', active_rule_tag)
             print('Rule Var', active_rule_var)
-            print(ds.Modality)
+            print('Dataset tag Modality', ds.Modality)
             dicom_tag_value = 'test'
-            if active_rule_tag == 'modality':
+            if active_rule_tag == 'Modality':
+                print('Active Modality Rule')
                 dicom_tag_value = ds.Modality
             print(active_rule_tag)
             print(active_rule_var)
@@ -190,6 +191,7 @@ def on_c_store(ds, context, info):
 
             else:
                 print('No Active Rule')
+                return 0x0000
 
 
 ae.on_c_echo = on_c_echo
