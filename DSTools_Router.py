@@ -32,6 +32,12 @@ def on_c_echo(context, info):
     return 0x0000
 
 
+def operand_equal(ds, active_rule_tag, dicom_tag_value):
+    print('Activve rule tag in equals to: ', active_rule_tag)
+
+    return dicom_tag_value
+
+
 def getsendingae(ds, context, info):
     temp = []
     dictList = []
@@ -62,6 +68,76 @@ def getsendingip(ds, context, info):
     receiveing_ip = newtesting2.replace("}", "")
     receiveing_ip = receiveing_ip.strip(" ")
     return receiveing_ip
+
+
+def get_dicom_tag_value(ds, rule_list3, active_rule_tag):
+    if active_rule_tag == 'Modality':
+        print('Active Modality Rule value =', ds.Modality)
+        dicom_tag_value = ds.Modality
+    elif active_rule_tag == 'InstitutionName':
+        print('trying to get Institution Name')
+        dicom_tag_value = ds.InstitutionName
+        print('Active Institution Rule value =', ds.InstitutionName)
+    elif active_rule_tag == 'SliceThickness':
+        dicom_tag_value = ds.SliceThickness
+        print('Active Slice Thickness Rule value =', ds.SliceThickness)
+    elif active_rule_tag == 'StudyDescription':
+        dicom_tag_value = ds.StudyDescription
+        print('Active Study Description Rule value =', ds.StudyDescription)
+    elif active_rule_tag == 'SeriesDescription':
+        dicom_tag_value = ds.SeriesDescription
+        print('Active Study Description Rule value =', ds.SeriesDescription)
+    return dicom_tag_value
+
+
+def check_rule_logic(dicom_tag_value, active_rule_var, active_rule_oper):
+    print('Logic', dicom_tag_value, ' ', active_rule_oper, ' ', active_rule_var)
+    print('Do logic')
+    if active_rule_oper == '=':
+        if dicom_tag_value == active_rule_var:
+            return True
+        else:
+            return False
+    elif active_rule_oper == '!=':
+        if dicom_tag_value != active_rule_var:
+            return True
+        else:
+            return False
+    elif active_rule_oper == 'Contains':
+        if active_rule_var.find(dicom_tag_value):
+            return True
+        else:
+            return False
+    elif active_rule_oper == 'Not Contains':
+        if not active_rule_var.find(dicom_tag_value):
+            return True
+        else:
+            return False
+    elif active_rule_oper == '<>':
+        if int(dicom_tag_value) != int(active_rule_var):
+            return True
+        else:
+            return True
+    elif active_rule_oper == '>':
+        if int(dicom_tag_value) > int(active_rule_var):
+            return True
+        else:
+            return True
+    elif active_rule_oper == '<':
+        if int(dicom_tag_value) < int(active_rule_var):
+            return True
+        else:
+            return True
+    elif active_rule_oper == '>=':
+        if int(dicom_tag_value) >= int(active_rule_var):
+            return True
+        else:
+            return True
+    elif active_rule_oper == '<=':
+        if int(dicom_tag_value) <= int(active_rule_var):
+            return True
+        else:
+            return True
 
 
 def on_c_store(ds, context, info):
@@ -104,21 +180,21 @@ def on_c_store(ds, context, info):
             restr = str(''.join(result))
             rule_list = restr.split(",")
             rule_list1 = rule_list[1].replace("'", "").replace(" ", "")
-            print('Rule list 1 :', rule_list1)
+            print('Rule list 1 Receiving IP  :', rule_list1)
             rule_list2 = rule_list[2].replace("'", "").replace(" ", "")
-            print('Rule list 2 :', rule_list2)
+            print('Rule list 2  DIcom tag:', rule_list2)
             rule_list3 = rule_list[3].replace("'", "").replace(" ", "")
-            print('Rule list 3 :', rule_list3)
+            print('Rule list 3  Operand:', rule_list3)
             rule_list4 = rule_list[4].replace("'", "").replace(" ", "")
             print('Rule list 4 :', rule_list4)
             rule_list5 = rule_list[5].replace("'", "").replace(" ", "")
-            print('Rule list 5 :', rule_list5)
+            print('Rule list 5 : Desztination IP', rule_list5)
             rule_list6 = rule_list[6].replace("'", "").replace(" ", "")
             print('Rule list 6 :', rule_list6)
             rule_list7 = rule_list[7].replace(")", "").replace(" ", "").replace("]", "").replace("'", "")
             print('Rule list 7 :', rule_list7)
             if rule_list7 == 'True':
-                print('Need to run Anonymize')
+                print('Running Anonymizer script')
                 anony(ds)
             _dest_ip = rule_list5
             _dest_port = 2222
@@ -149,22 +225,26 @@ def on_c_store(ds, context, info):
             active_rule_var = rule_list4
             active_rule_oper = rule_list3
             active_rule_tag = rule_list2
-            active_rule_tag = active_rule_tag.replace("'", "")
-            active_rule_tag = active_rule_tag.replace(" ", "")
-            active_rule_var = active_rule_var.replace("'", "")
-            active_rule_var = active_rule_var.replace(" ", "")
+            active_rule_tag = active_rule_tag.replace("'", "").replace(" ", "")
+            active_rule_var = active_rule_var.replace("'", "").replace(" ", "")
+
             print('Rule Operand', active_rule_oper)
             print('Rule Tag', active_rule_tag)
             print('Rule Var', active_rule_var)
             print('Dataset tag Modality', ds.Modality)
-            dicom_tag_value = 'test'
-            if active_rule_tag == 'Modality':
-                print('Active Modality Rule')
-                dicom_tag_value = ds.Modality
-            print(active_rule_tag)
-            print(active_rule_var)
-            if dicom_tag_value == active_rule_var:
-                print('testing')
+
+            dicom_tag_value = get_dicom_tag_value(ds, rule_list3, active_rule_tag)
+            dicom_tag_value = dicom_tag_value.replace(" ", "")
+
+            print('DICOM tag Value after def:', dicom_tag_value)
+
+            print('Dicom Active Rule varable : ', active_rule_var)
+
+            check_rule = check_rule_logic(dicom_tag_value, active_rule_var, active_rule_oper)
+
+            print('Just checked rule logic and it is : ', check_rule)
+            if check_rule:
+                print('Creating Association')
                 assoc = ae.associate(config_dest_IP, config_dest_PORT)
                 assoc.maximum_associations = config_dest_MAX_Threads
                 assoc.NumberOfActiveAssociations = config_dest_MAX_Threads
@@ -185,13 +265,14 @@ def on_c_store(ds, context, info):
                     assoc.release()
                 else:
                     print('Association rejected or aborted')
-                ae.remove_requested_context(meta.MediaStorageSOPClassUID)
                 # Return a 'Success' status
                 return 0x0000
 
             else:
                 print('No Active Rule')
                 return 0x0000
+
+    ae.remove_requested_context(meta.MediaStorageSOPClassUID)
 
 
 ae.on_c_echo = on_c_echo
