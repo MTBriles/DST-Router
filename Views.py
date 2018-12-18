@@ -12,7 +12,6 @@ except ImportError:
 
 """ Takes the DICOMEcho class from DICOM_Utiles.py file and assigns it to a global var here in the Views.py.  
  It is used in the dicom_echo func in Class Devices."""
-dcm_util = DICOM_Utils.DICOMEcho
 tags = tag_dict.dictlist
 
 
@@ -56,17 +55,31 @@ class Devices(tk.Toplevel):
 
     def dicom_echo(self):
         print('DICOM Echo')
-        self.dcm = dcm_util.dcm_echo(self)
+        curItem = self.tree.focus()
+        dict = self.tree.item(curItem)
+        row = ''.join('{}'.format(val) for val in dict.items())
+        row_l = (row.split(', ['))
+        row_ls = row_l[1]
+        new_row_ls = (row_ls.split(','))
+        _ip = new_row_ls[2].replace(' ', '')
+        ip = _ip.replace("'", '')
+        port = int(new_row_ls[3].replace(' ', ''))
+        self.dcm = DICOM_Utils.dcm_echo(ip, port)
         self.check()
 
     def check(self):
+        print('checking')
         if str(self.dcm) == 'association':
+            print('assoc')
             label(self, '***PORT IS OPEN BUT DICOM ASSOCIATION FAILED***', 7, 2, sticky=tk.W, columnspan=2)
         elif str(self.dcm) == 'port':
+            print('port')
             label(self, '***PORT IS BLOCKED BUT YOU CAN PING IP***', 7, 2, sticky=tk.W, columnspan=2)
         elif str(self.dcm) == 'ping':
+            print('ping')
             label(self, '***COULD NOT PING IP***', 7, 2, sticky=tk.W, columnspan=2)
         elif str(self.dcm) == 'success':
+            print('success')
             label(self, '***SUCCESS***', 7, 2, sticky=tk.W, columnspan=2)
 
     def __init__(self):
@@ -148,7 +161,7 @@ class Rules(tk.Toplevel):
     def __init__(self, *args, **kwargs):
         tk.Toplevel.__init__(self, *args, **kwargs)
         self.title('Activate/Remove Rules')
-        self.geometry('950x525')
+        self.geometry('800x450')
         self.configure(bg='gray16')
         self.tree = None
         self._setup_widgets()
@@ -247,42 +260,63 @@ class BuildRules(tk.Toplevel):
         self.entry_criteria = tk.Entry(self, bg='gray14', fg='alice blue', width=25)
         self.entry_criteria.grid(row=4, column=3)
 
-        self.button_add_rule = tk.Button(self, text='Add Rule', bg='gray14', fg='darkorange1')
+        self.button_add_rule = tk.Button(self, text='Add Rule', bg='gray14', fg='darkorange1', command=self.get_rules)
         self.button_add_rule.grid(row=7, column=2, pady=15)
 
-        self.button_anonymize = tk.Checkbutton(self, text='Anonymize ?', bg='gray16', fg='dodger blue')
+        self.butt_anony = tk.IntVar()
+        self.button_anonymize = tk.Checkbutton(self, text='Anonymize ?', variable=self.butt_anony,
+                                               bg='gray16', fg='dodger blue')
         self.button_anonymize.grid(row=5, column=2, pady=10)
 
-        self.button_active = tk.Checkbutton(self, text='Make Active ?', bg='gray16', fg='dodger blue')
+        self.butt_active = tk.IntVar()
+        self.button_active = tk.Checkbutton(self, text='Make Active ?', variable=self.butt_active,
+                                            bg='gray16', fg='dodger blue')
         self.button_active.grid(row=6, column=2, pady=10)
 
         options = SQL.get_list()
-        self.strv = tk.StringVar()
-        self.strv.set(options[0])
-        self.option_sources = tk.OptionMenu(self, self.strv, *options)
+        self.strvs = tk.StringVar()
+        self.strvs.set(options[0])
+        self.option_sources = tk.OptionMenu(self, self.strvs, *options)
         self.option_sources.grid(row=2, column=0, pady=0)
         self.option_sources.config(width=50, bg='gray14', fg='alice blue', relief=tk.GROOVE)
 
         options = SQL.get_list()
-        self.strv = tk.StringVar()
-        self.strv.set(options[0])
-        self.option_destination = tk.OptionMenu(self, self.strv, *options)
+        self.strvd = tk.StringVar()
+        self.strvd.set(options[0])
+        self.option_destination = tk.OptionMenu(self, self.strvd, *options)
         self.option_destination.grid(row=2, column=4, pady=0)
         self.option_destination.config(width=50, bg='gray14', fg='alice blue', relief=tk.GROOVE)
 
         options = list(tags)
-        self.strv = tk.StringVar()
-        self.strv.set(options[0])
-        self.option_options = tk.OptionMenu(self, self.strv, *options)
+        self.strvopt = tk.StringVar()
+        self.strvopt.set(options[0])
+        self.option_options = tk.OptionMenu(self, self.strvopt, *options)
         self.option_options.grid(row=4, column=1, pady=0)
         self.option_options.config(width=30, bg='gray14', fg='alice blue', relief=tk.GROOVE)
 
         options = ['=', '!=', 'Contains', 'Not Contains', '<>', '<', '>', '>=', '<=']
-        self.strv = tk.StringVar()
-        self.strv.set(options[0])
-        self.option_operators = tk.OptionMenu(self, self.strv, *options)
+        self.strvops = tk.StringVar()
+        self.strvops.set(options[0])
+        self.option_operators = tk.OptionMenu(self, self.strvops, *options)
         self.option_operators.grid(row=4, column=2, pady=0)
         self.option_operators.config(width=12, bg='gray14', fg='alice blue', relief=tk.GROOVE)
+
+    def get_rules(self):
+        sour = (self.strvs.get()).split(',')
+        _sour = (sour[2].replace(' ', '').replace("'", ''))
+        dest = (self.strvd.get()).split(',')
+        #_dest is the destination IP
+        _dest = (dest[2].replace(' ', '').replace("'", ''))
+        opt = (self.strvopt.get()).split(',')
+        # _opt is the options stripped down.
+        _opt = (opt[1].replace(' ', '')).replace(')', '').replace("'", '')
+        operator = self.strvops.get()
+        criteria = self.entry_criteria.get()
+        active = self.butt_active.get()
+        anony = self.butt_anony.get()
+        rule = [_opt, operator, criteria]
+        _rule = (','.join(rule)).replace('[]', '').replace("'", '')
+        SQL.add_rules(_sour, _rule, _dest, active, anony)
 
 
 class DSTConfig(tk.Toplevel):
@@ -314,7 +348,7 @@ class DSTConfig(tk.Toplevel):
         button(self, 'UPDATE', self.get_destination, 13, 0, pady=25)
 
     def get_destination(self):
-        """ Should be named 'get info from entrys and pass to SQL.anony config to update DB table' but that seemed a bit
+        """ Should be named get info from entrys and pass to SQL.anony config to update DB table' but that seemed a bit
         much."""
         SQL.update_anony_config(self.entry_localae.get(), self.entry_localport.get(), self.entry_local_threads.get())
         Anonymize.destroy(self)
