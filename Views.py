@@ -12,7 +12,7 @@ except ImportError:
 
 """ Takes the DICOMEcho class from DICOM_Utiles.py file and assigns it to a global var here in the Views.py.  
  It is used in the dicom_echo func in Class Devices."""
-tags = tag_dict.dictlist
+#tags = tag_dict.dictlist
 
 
 def label(self, text,  row, column, font=None, pady=None, sticky=None, columnspan=None):
@@ -352,3 +352,264 @@ class DSTConfig(tk.Toplevel):
         much."""
         SQL.update_anony_config(self.entry_localae.get(), self.entry_localport.get(), self.entry_local_threads.get())
         Anonymize.destroy(self)
+
+
+
+class NewBuildRules(tk.Toplevel):
+
+    def cancel(self):
+        NewBuildRules.destroy(self)
+
+
+    def __init__(self):
+        tk.Toplevel.__init__(self)
+        self.title('Build Rule')
+        self.geometry('815x632')
+        self.configure(bg='gray16')
+        self.tree = None
+        self.notebook()
+        self.s_widgets()
+        self.d_widgets()
+        self.r_widgets()
+        self.feature_widgets()
+        self.s_build_tree()
+        self.d_build_tree()
+
+
+        label_blank = tk.Label(self, text='Build Rule', bg='gray16', fg='alice blue', font=('', 14))
+        label_blank.grid(row=0, column=1)
+        label_blank1 = tk.Label(self, text='', bg='gray16')
+        label_blank1.grid(column=0)
+
+    def notebook(self):
+
+        button_save = tk.Button(self, text='SAVE', command=self.save_clicked)
+        button_save.grid(row=2, column=1, pady=5)
+
+        button_cancel = tk.Button(self, text='CANCEL', command=self.cancel)
+        button_cancel.grid(row=3, column=1, pady=15)
+
+        self.nb = ttk.Notebook(self)
+        self.nb.grid(row=1, column=1, sticky=tk.N + tk.S + tk.E + tk.W)
+
+        self.sources = tk.Frame(self.nb)
+        self.sources.configure(height=500, width=800, bg='alice blue')
+        self.nb.add(self.sources, text='Source')
+
+        self.rules = tk.Frame(self.nb)
+        self.rules.configure(height=500, width=800, bg='alice blue')
+        self.nb.add(self.rules, text='Rules')
+
+        self.destinations = tk.Frame(self.nb)
+        self.destinations.configure(height=500, width=800, bg='alice blue')
+        self.nb.add(self.destinations, text='Destinations')
+
+        self.features = tk.Frame(self.nb)
+        self.features.configure(height=500, width=800, bg='alice blue')
+        self.nb.add(self.features, text='Features')
+
+        self.nb.select(self.sources)
+        self.nb.enable_traversal()
+
+    def s_widgets(self):
+
+        self.tree = ttk.Treeview(self.sources, columns=b_headers, show='headings')
+        vsb = ttk.Scrollbar(self.sources, orient='vertical', command=self.tree.yview)
+
+        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree.grid(row=1, column=1, columnspan=1)
+        vsb.grid(row=1, column=2, sticky=tk.W + tk.N + tk.S)
+
+        label_blank2 = tk.Label(self.sources, text=' ', bg='alice blue')
+        label_blank2.grid(row=0, column=0, padx=32)
+
+        label_source = tk.Label(self.sources, text='Choose Source', bg='alice blue', fg='gray16', font=('', 18))
+        label_source.grid(row=0, column=1, pady=30)
+
+        button_next = tk.Button(self.sources, text='NEXT', command=self.next_rtab)
+        button_next.grid(row=2, column=1, pady=10)
+
+    def next_rtab(self):
+        #switches you to the rules tab
+        self.nb.select(self.rules)
+
+    def s_build_tree(self):
+        for col in b_headers:
+            self.tree.heading(col, text=col.title())
+            # adjust the columns width to the header string
+            self.tree.column(col, width=tkFont.Font().measure(col.title()))
+
+        for item in SQL.get_list():
+            print(self.tree.insert('', 'end', values=item))
+            # adjust columns width if necessary to fit each value
+            for ix, val in enumerate(item):
+                col_w = tkFont.Font().measure(val)
+                if self.tree.column(b_headers[ix], width=100):  # <col_w:
+                    self.tree.column(b_headers[ix], width=col_w)
+
+    def d_widgets(self):
+
+        self.dtree = ttk.Treeview(self.destinations, columns=b_headers, show='headings')
+        vsb = ttk.Scrollbar(self.destinations, orient='vertical', command=self.dtree.yview)
+
+        self.dtree.configure(yscrollcommand=vsb.set)
+        self.dtree.grid(row=1, column=1, columnspan=1)
+        vsb.grid(row=1, column=2, sticky=tk.W + tk.N + tk.S)
+
+        label_blank2 = tk.Label(self.destinations, text=' ', bg='alice blue')
+        label_blank2.grid(row=0, column=0, padx=32)
+
+        label_source = tk.Label(self.destinations, text='Choose Destination', bg='alice blue', fg='gray16', font=('', 18))
+        label_source.grid(row=0, column=1, pady=30)
+
+        button_next = tk.Button(self.destinations, text='NEXT', command=self.next_ftab)
+        button_next.grid(row=2, column=1, pady=10)
+
+    def next_ftab(self):
+        # switches you to the features tab
+        self.nb.select(self.features)
+
+    def d_build_tree(self):
+        for col in b_headers:
+            self.dtree.heading(col, text=col.title())
+            # adjust the columns width to the header string
+            self.dtree.column(col, width=tkFont.Font().measure(col.title()))
+
+        for item in SQL.get_list():
+            print(self.dtree.insert('', 'end', values=item))
+            # adjust columns width if necessary to fit each value
+            for ix, val in enumerate(item):
+                col_w = tkFont.Font().measure(val)
+                if self.dtree.column(b_headers[ix], width=100):  # <col_w:
+                    self.dtree.column(b_headers[ix], width=col_w)
+
+    def r_widgets(self):
+
+        label_rules = tk.Label(self.rules, text='RULES', bg='alice blue', fg='gray16', font=('', 18))
+        label_rules.grid(row=0, column=1)
+
+        self.listbox = tk.Listbox(self.rules, width=60)
+        self.listbox.grid(row=1, column=1, pady=15)
+
+        label_options = tk.Label(self.rules, text='Options', bg='alice blue', fg='gray16', font=('', 12))
+        label_options.grid(row=2, column=0)
+        label_operators = tk.Label(self.rules, text='Operators', bg='alice blue', fg='gray16', font=('', 12))
+        label_operators.grid(row=2, column=1)
+        label_criteria = tk.Label(self.rules, text='Criteria', bg='alice blue', fg='gray16', font=('', 12))
+        label_criteria.grid(row=2, column=2)
+
+        self.entry_criteria = tk.Entry(self.rules, bd=2, fg='gray16', width=30)
+        self.entry_criteria.grid(row=3, column=2)
+
+        button_and = tk.Button(self.rules, text='AND', fg='gray16', bg='darkorange1', command=self.and_clicked)
+        button_and.grid(row=4, column=1, pady=10)
+
+        button_or = tk.Button(self.rules, text='OR', fg='gray16', bg='darkorange1', command=self.or_clicked)
+        button_or.grid(row=5, column=1)
+
+        self.button_add = tk.Button(self.rules, text='ADD', command=self.add_clicked, fg='gray16', bg='darkorange1')
+        self.button_add.grid(row=4, column=2, pady=10)
+
+        button_next = tk.Button(self.rules, text='NEXT', fg='gray16', command=self.next_dtab)
+        button_next.grid(row=6, column=1, pady=35)
+
+        options = list(tag_dict.DicomDictionary)
+        self.strvopt = tk.StringVar()
+        self.strvopt.set(options[0])
+        self.option_options = tk.OptionMenu(self.rules, self.strvopt, *options)
+        self.option_options.grid(row=3, column=0, pady=0)
+        self.option_options.config(width=25, fg='gray14', bg='alice blue', relief=tk.GROOVE)
+
+        options = ['=', '!=', 'Contains', 'Not Contains', '<>', '<', '>', '>=', '<=']
+        self.strvops = tk.StringVar()
+        self.strvops.set(options[0])
+        self.option_operators = tk.OptionMenu(self.rules, self.strvops, *options)
+        self.option_operators.grid(row=3, column=1, pady=0)
+        self.option_operators.config(width=12, fg='gray14', bg='alice blue', relief=tk.GROOVE)
+
+        self.butt_active = tk.IntVar()
+        self.button_active = tk.Checkbutton(self.rules, text='Make Active ?', variable=self.butt_active,
+                                            bg='alice blue', fg='gray16')
+        self.button_active.grid(row=6, column=2, pady=10)
+
+
+    def next_dtab(self):
+        self.nb.select(self.destinations)
+
+    def add_clicked(self):
+        options = self.strvopt.get()
+        operators = self.strvops.get()
+        criteria = self.entry_criteria.get()
+        rule = [str(options), str(operators), criteria]
+        self.listbox.insert(tk.END, rule)
+
+    def and_clicked(self):
+        self.listbox.insert(tk.END, 'AND')
+
+    def or_clicked(self):
+        self.listbox.insert(tk.END, 'OR')
+
+    def feature_widgets(self):
+
+        label_blank = tk.Label(self.features, text='', bg='alice blue')
+        label_blank.grid(row=0, column=0, padx=100)
+
+        label_features = tk.Label(self.features, text='Select Features', bg='alice blue', fg='gray16', font=('', 18))
+        label_features.grid(row=0, column=1)
+
+        self.butt_anony = tk.IntVar()
+        self.button_anonymize = tk.Checkbutton(self.features, text='Anonymize ?', variable=self.butt_anony,
+                                               bg='alice blue', fg='gray16')
+        self.button_anonymize.grid(row=1, column=1, pady=10)
+
+        self.button_lung = tk.IntVar()
+        self.button_lung_rule = tk.Checkbutton(self.features, text='DynaCAD Lung', variable=self.button_lung,
+                                               bg='alice blue', fg='gray16')
+        self.button_lung_rule.grid(row=2, column=1)
+
+    def save_clicked(self):
+        _anony = ()
+        _lung = ()
+        _active = ()
+        curItem = self.tree.focus()
+        dict = str(self.tree.item(curItem))
+        _s = dict.split(',')
+        source = (_s[3].replace(' ', '')).replace("'", '')
+
+        d_curItem = self.dtree.focus()
+        d_dict = str(self.dtree.item(d_curItem))
+        _d = d_dict.split(',')
+        destination = (_d[3].replace(' ', '')).replace("'", '')
+
+        lb = str(self.listbox.get(0, tk.END))
+        _lb = ((((lb.replace('(', '')).replace("'", '')).replace(',', '')).replace(')', '')).replace('"', '')
+        print(_lb)
+
+
+        anony = self.butt_anony.get()
+        lung = self.button_lung.get()
+        active = self.butt_active.get()
+
+        if anony == 0:
+            _anony = 'null'
+        elif anony == 1:
+            _anony = 'Anony'
+
+        if lung == 0:
+            _lung = 'null'
+        elif lung == 1:
+            _lung = 'Lung'
+
+        if active == 0:
+            _active = 'False'
+        elif active == 1:
+            _active = 'True'
+
+        features = (_anony, _lung)
+
+        SQL.add_rules(str(source), str(_lb), str(destination), str(_active), str(features))
+
+        self.cancel()
+
+
+b_headers = ['ID', 'Name', 'IP', 'Port', 'AE', 'Threads']
